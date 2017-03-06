@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.8"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
+	<classpathentry kind="lib" path="C:/Users/jwlee/workspace/RewardScheme/lib/jpbc-2.0.0/jars/jpbc-mm-2.0.0.jar"/>
+	<classpathentry kind="lib" path="C:/Users/jwlee/workspace/RewardScheme/lib/jpbc-2.0.0/jars/jpbc-api-2.0.0.jar"/>
+	<classpathentry kind="lib" path="C:/Users/jwlee/workspace/RewardScheme/lib/jpbc-2.0.0/jars/jpbc-plaf-2.0.0.jar" sourcepath="C:/Users/jwlee/workspace/RewardScheme/lib/jpbc-2.0.0/jpbc-plaf"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>
