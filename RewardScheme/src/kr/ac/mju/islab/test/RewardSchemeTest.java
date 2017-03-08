@@ -10,19 +10,84 @@ import it.unisa.dia.gas.plaf.jpbc.pairing.PairingFactory;
 import static org.junit.Assert.*;
 
 import java.math.BigInteger;
+import java.util.List;
+import java.util.ArrayList;
 
 import org.junit.Test;
 
 
+/*
+ * This is a jUnit unit test class for RewardScheme.
+ * If you are simply using RewardScheme, you don't need to check through this class.
+ */
 public class RewardSchemeTest {
 	
+	/*
+	 * Belows are RewardScheme related testings. 
+	 */
 	@Test
 	public void issuVeriCheck() {
 		// Setup
 		RewardScheme rewardS = new RewardScheme();
+
+		// Play Helper's role in recIssue Process.
+		Element[] rtn = rewardS.recIssueHelperPre();
+		Element s = rtn[0];
+		Element r = rtn[1];
+		Element h = rtn[2];
+
+		// Pass h to master
+		Element psi = rewardS.recIssueMaster(h);
+
+		// Generate sigma from master's response, psi.
+		Element sigma = rewardS.recIssueHelperPost(r, psi, rewardS.y);
 		
-		Element rtn[] = rewardS.recIssuingProcess();
-		assertEquals(rewardS.verification(rtn[0], rtn[1]), true);
+		// UnitTest Part
+		assertEquals(rewardS.verify(sigma, s, rewardS.y), true);
+	}
+	
+	@Test
+	public void issuVeriCheck10() {
+		// Setup
+		RewardScheme rewardS = new RewardScheme();
+		
+		// Check
+		for (int i=0; i<10; i++) {
+			Element[] rtn = rewardS.recIssueHelperPre();
+			Element s = rtn[0];
+			Element r = rtn[1];
+			Element h = rtn[2];
+			Element psi = rewardS.recIssueMaster(h);
+			Element sigma = rewardS.recIssueHelperPost(r, psi, rewardS.y);
+
+			assertEquals(rewardS.verify(sigma, s, rewardS.y), true);
+		}
+	}
+
+	@Test
+	public void aggVeriCheck() {
+		// Setup
+		RewardScheme rewardS = new RewardScheme();
+		List<Element> sigmaList = new ArrayList<Element>();
+		List<Element> sList = new ArrayList<Element>();
+		List<Element> yList = new ArrayList<Element>();
+		
+		// Aggregate
+		for (int i=0; i<10; i++) {
+			Element[] rtn = rewardS.recIssueHelperPre();
+			Element s = rtn[0];
+			Element r = rtn[1];
+			Element h = rtn[2];
+			Element psi = rewardS.recIssueMaster(h);
+			Element sigma = rewardS.recIssueHelperPost(r, psi, rewardS.y);
+			sigmaList.add(sigma);
+			sList.add(s);
+			yList.add(rewardS.y);
+		}
+		Element sigmaAgg = rewardS.aggregate(sigmaList);
+		
+		// Verify
+		rewardS.aggVerify(sigmaAgg, sList, yList);
 	}
 	
 	@Test
@@ -41,9 +106,12 @@ public class RewardSchemeTest {
 		 */
 	}
 
+
 	/*
-	 * Belows are jPBC testing. If you are new to (j)PBC, you can use these as a 
+	 * Belows are jPBC related testings. If you are new to (j)PBC, you can use these as a 
 	 * simple self-explained manual.
+	 * (j)PBC/Arcanum url: 
+	 * http://adecaro.github.io/arcanum/docs/linearmaps/linearmaps.html
 	 */
 	@Test
 	public void initPairing() {
@@ -138,22 +206,22 @@ public class RewardSchemeTest {
 		Field G2= pairing.getG2();
 		
 		/*
-		 * DO NOT FORGET TO DUPLICATE THE DATA! ALL METHODS CHANGES 
+		 * DO NOT FORGET TO GET_IMMUTABLE/DUPLICATE THE DATA! ALL METHODS CHANGES 
 		 * THE VARIABLE ITSELF!
 		 */
 		// Bilinearity check
-		Element a = G1.newRandomElement();
-		Element b = G2.newRandomElement();
+		Element a = G1.newRandomElement().getImmutable();
+		Element b = G2.newRandomElement().getImmutable();
 		
 		assertEquals(
-				pairing.pairing(a.duplicate().square(), b),
-				pairing.pairing(a, b.duplicate().square())
+				pairing.pairing(a.square(), b),
+				pairing.pairing(a, b.square())
 				);
 		
 		// Bilinearity check 2
 		assertEquals(
-				pairing.pairing(a.duplicate().pow(new BigInteger("2")), b),
-				pairing.pairing(a, b.duplicate().pow(new BigInteger("2")))
+				pairing.pairing(a.pow(new BigInteger("2")), b),
+				pairing.pairing(a, b.pow(new BigInteger("2")))
 				);
 	}
 }
