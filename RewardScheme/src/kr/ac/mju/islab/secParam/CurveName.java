@@ -1,6 +1,12 @@
 package kr.ac.mju.islab.secParam;
 
 public enum CurveName {
-	A,
-	B
+	a,
+	a1,
+	d159,
+	d201,
+	d224,
+	e,
+	f,
+	g149
 }
