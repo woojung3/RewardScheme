@@ -1,5 +1,6 @@
 package kr.ac.mju.islab.test;
 
+import kr.ac.mju.islab.RewardProto.RewardPacket;
 import kr.ac.mju.islab.RewardScheme;
 import kr.ac.mju.islab.secParam.CurveName;
 import kr.ac.mju.islab.secParam.HashName;
@@ -8,6 +9,9 @@ import it.unisa.dia.gas.jpbc.*;
 import it.unisa.dia.gas.plaf.jpbc.pairing.PairingFactory;
 
 import static org.junit.Assert.*;
+
+import com.google.protobuf.ByteString;
+import com.google.protobuf.InvalidProtocolBufferException;
 
 import java.math.BigInteger;
 import java.util.List;
@@ -21,6 +25,28 @@ import org.junit.Test;
  * If you are simply using RewardScheme, you don't need to check through this class.
  */
 public class RewardSchemeTest {
+	
+	/*
+	 * Protocol Buffers related testings.
+	 */
+	@Test
+	public void protobufWorkingCheck() {
+		// Setup
+		RewardScheme rewardS = new RewardScheme();
+		
+		RewardPacket rPacket = RewardPacket.newBuilder()
+				.setPid(1)
+				.setE1(ByteString.copyFrom(rewardS.y.toBytes()))
+				.build();
+		byte[] rPacketSerialized = rPacket.toByteArray();
+		RewardPacket rPacketDeserialized;
+		try {
+			rPacketDeserialized = RewardPacket.parseFrom(rPacketSerialized);
+			assertEquals(rewardS.y, rewardS.G1.newElementFromBytes(rPacketDeserialized.getE1().toByteArray()));
+		} catch (InvalidProtocolBufferException e) {
+			e.printStackTrace();
+		}
+	}
 	
 	/*
 	 * Belows are RewardScheme related testings. 

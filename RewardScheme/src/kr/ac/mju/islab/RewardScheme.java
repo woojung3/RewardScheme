@@ -224,6 +224,9 @@ public class RewardScheme {
 	public boolean aggVerify(Element sigmaAgg, List<Element> sList, List<Element> yList){
 		Element comp = pairing.getGT().newOneElement();
 		for (int i=0; i<sList.size(); i++) {
+			if (L.contains(sList.get(i)) == true){
+				return false;
+			}
 			byte[] digest = hash.getByteDigest(sList.get(i).toBytes());
 			comp.mul(pairing.pairing(G1.newElement().setFromHash(digest, 0, digest.length), yList.get(i)));
 		}

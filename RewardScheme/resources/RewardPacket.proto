@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package reward;
+
+option java_package = "kr.ac.mju.islab";
+option java_outer_classname = "RewardProto";
+
+message RewardPacket {
+	int32 pid = 1;
+	bool isValid = 2;
+
+	bytes e1 = 3;
+	bytes e2 = 4;
+	bytes e3 = 5;
+	
+	repeated bytes eList1 = 6;
+	repeated bytes eList2 = 7;
+	
+	repeated string aux = 8;
+}
