@@ -33,8 +33,6 @@ public class RewardClient {
         sockChannel.connect(new InetSocketAddress(host, port), sockChannel, new CompletionHandler<Void, AsynchronousSocketChannel>() {
             @Override
             public void completed(Void result, AsynchronousSocketChannel channel) {
-				//start to read message
-				startRead(channel);
 				//write an message to server side
 				startWrite(channel, packet);
             }
@@ -48,11 +46,10 @@ public class RewardClient {
 					e.printStackTrace();
 				}
             }
-            
         });
 
         // wait until group.shutdown()/shutdownNow(), or the thread is interrupted:
-        group.awaitTermination(30, TimeUnit.SECONDS);
+        group.awaitTermination(Long.MAX_VALUE, TimeUnit.SECONDS);
     }
    
     private void startWrite(final AsynchronousSocketChannel sockChannel, final RewardPacket packet) {
@@ -68,7 +65,10 @@ public class RewardClient {
 
         sockChannel.write(buf, sockChannel, new CompletionHandler<Integer, AsynchronousSocketChannel>() {
             @Override
-            public void completed(Integer result, AsynchronousSocketChannel channel) { }
+            public void completed(Integer result, AsynchronousSocketChannel channel) {
+				//start to read message
+				startRead(channel); 
+			}
 
             @Override
             public void failed(Throwable exc, AsynchronousSocketChannel channel) {
@@ -78,10 +78,9 @@ public class RewardClient {
     }
     
     private void startRead(final AsynchronousSocketChannel sockChannel) {
-        final ByteBuffer buf = ByteBuffer.allocate(2048);
+        final ByteBuffer buf = ByteBuffer.allocate(32768);	// Capable of dealing with #100 aggregated receipt
         
         sockChannel.read(buf, sockChannel, new CompletionHandler<Integer, AsynchronousSocketChannel>(){
-
             @Override
             public void completed(Integer result, AsynchronousSocketChannel channel) {   
             	// Process header to get a length of received packet.
@@ -91,7 +90,7 @@ public class RewardClient {
 				buf.compact();
             	
 				byte[] recvBytePacket = new byte[ByteBuffer.wrap(packetLenInfo).getInt()];
-				if (recvBytePacket.length > 2048) {
+				if (recvBytePacket.length > 32768) {
 					System.out.println("Buffer size is smaller than received packet size: " + recvBytePacket.length);
 				}
 				buf.flip();
@@ -102,6 +101,7 @@ public class RewardClient {
             	// Save received packet from server into public variable rtnPacket
 				try {
 					recvPacket = RewardPacket.parseFrom(recvBytePacket);
+					sockChannel.close();
 					group.shutdownNow();
 				} catch (IOException e) {
 					e.printStackTrace();

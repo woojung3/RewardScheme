@@ -10,6 +10,7 @@ import java.nio.channels.CompletionHandler;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -87,9 +88,16 @@ public class RewardServer implements Runnable {
 
             @Override
             public void failed(Throwable exc, AsynchronousServerSocketChannel serverSock) {
-                System.out.println("Fail to accept a connection");
+                System.err.println("Fail to accept a connection");
             }
         } );
+
+        // wait until group.shutdown()/shutdownNow(), or the thread is interrupted:
+        try {
+			group.awaitTermination(Long.MAX_VALUE, TimeUnit.SECONDS);
+		} catch (InterruptedException e) {
+			System.out.println("Server closed by interrupt.");
+		}
     }
     
     /**
@@ -102,7 +110,7 @@ public class RewardServer implements Runnable {
      * @param sockChannel socket channel
      */
     private void startRead(AsynchronousSocketChannel sockChannel) {
-        ByteBuffer buf = ByteBuffer.allocate(2048);
+        ByteBuffer buf = ByteBuffer.allocate(32768);	// Capable of dealing with #100 aggregated receipt
         
         //read message from client
         sockChannel.read(buf, sockChannel, new CompletionHandler<Integer, AsynchronousSocketChannel>() {
@@ -116,8 +124,12 @@ public class RewardServer implements Runnable {
 				} catch (Exception e) { }	// Ignore errors on client disconnection.
 				buf.compact();
             	
-				byte[] recvBytePacket = new byte[ByteBuffer.wrap(packetLenInfo).getInt()];
-				if (recvBytePacket.length > 2048) {
+				int packetLen = ByteBuffer.wrap(packetLenInfo).getInt();
+				if (packetLen == 0) {
+					return;
+				}
+				byte[] recvBytePacket = new byte[packetLen];
+				if (recvBytePacket.length > 32768) {
 					System.out.println("Buffer size is smaller than received packet size: " + recvBytePacket.length);
 				}
 				buf.flip();
@@ -134,47 +146,64 @@ public class RewardServer implements Runnable {
 				}
 
 				// Process packet according to its pid.
-				if (recvPacket.getPid() == 0) { // RewardScheme.recIssueMaster
+				if (recvPacket.getPid() == 1) { // RewardScheme.recIssueMaster
 					Element h = rewardScheme.G1.newElementFromBytes(recvPacket.getE1().toByteArray()).getImmutable();
 					Element psi = rewardScheme.recIssueMaster(h).getImmutable();
 
 					sendPacket = RewardPacket.newBuilder()
+							.setPid(1)	// Is not necessary. Append for analysis
 							.setE1(ByteString.copyFrom(psi.toBytes()))
 							.build();
 				}
-				else if (recvPacket.getPid() == 1) {	// RewardScheme.verify
+				else if (recvPacket.getPid() == 2) {	// RewardScheme.verify
 					Element sigma = rewardScheme.G1.newElementFromBytes(recvPacket.getE1().toByteArray()).getImmutable();
 					Element s = rewardScheme.Zr.newElementFromBytes(recvPacket.getE2().toByteArray()).getImmutable();
 					Element y = rewardScheme.G2.newElementFromBytes(recvPacket.getE3().toByteArray()).getImmutable();
 					
 					sendPacket = RewardPacket.newBuilder()
+							.setPid(2)	// Is not necessary. Append for analysis
 							.setIsValid(rewardScheme.verify(sigma, s, y))
 							.build();
 				}
-				else if (recvPacket.getPid() == 2) {	// RewardScheme.aggVerify
+				else if (recvPacket.getPid() == 3) {	// RewardScheme.aggVerify
 					Element sigmaAgg = rewardScheme.G1.newElementFromBytes(recvPacket.getE1().toByteArray()).getImmutable();
 					List<Element> sList = ByteStringListToElementList(recvPacket.getEList1List(), rewardScheme.Zr);
 					List<Element> yList = ByteStringListToElementList(recvPacket.getEList2List(), rewardScheme.G2);
 					
 					sendPacket = RewardPacket.newBuilder()
+							.setPid(3)	// Is not necessary. Append for analysis
 							.setIsValid(rewardScheme.aggVerify(sigmaAgg, sList, yList))
 							.build();
 				}
 				else if (recvPacket.getPid() == 101) {	// RewardScheme.y
-					sendPacket = RewardPacket.newBuilder().setE1(ByteString.copyFrom(rewardScheme.y.toBytes())).build();
+					sendPacket = RewardPacket.newBuilder()
+							.setPid(101)	// Is not necessary. Append for analysis
+							.setE1(ByteString.copyFrom(rewardScheme.y.toBytes()))
+							.build();
 				}
 				else if (recvPacket.getPid() == 102) {	// RewardScheme.g1
-					sendPacket = RewardPacket.newBuilder().setE1(ByteString.copyFrom(rewardScheme.g1.toBytes())).build();
+					sendPacket = RewardPacket.newBuilder()
+							.setPid(102)	// Is not necessary. Append for analysis
+							.setE1(ByteString.copyFrom(rewardScheme.g1.toBytes()))
+							.build();
 				}
 				else if (recvPacket.getPid() == 103) {	// RewardScheme.g2
-					sendPacket = RewardPacket.newBuilder().setE1(ByteString.copyFrom(rewardScheme.g2.toBytes())).build();
+					sendPacket = RewardPacket.newBuilder()
+							.setPid(103)	// Is not necessary. Append for analysis
+							.setE1(ByteString.copyFrom(rewardScheme.g2.toBytes()))
+							.build();
+				}
+				else {
+					System.err.println("Unexpected: " + recvPacket.getAllFields());
+					startRead(channel);
+					return;
 				}
 
 				// Prepend packetLenInfo to the RewardPacket, so that the other side can determine the packet size
-				int packetLen = sendPacket.toByteArray().length;
-				byte[] sendPacketLenInfo = ByteBuffer.allocate(4).putInt(packetLen).array();
+				int sendPacketLen = sendPacket.toByteArray().length;
+				byte[] sendPacketLenInfo = ByteBuffer.allocate(4).putInt(sendPacketLen).array();
 
-				ByteBuffer sendBuf = ByteBuffer.allocate(4 + packetLen);
+				ByteBuffer sendBuf = ByteBuffer.allocate(4 + sendPacketLen);
 				sendBuf.put(sendPacketLenInfo);
 				sendBuf.put(sendPacket.toByteArray());
 				sendBuf.flip();
@@ -187,7 +216,9 @@ public class RewardServer implements Runnable {
             }
 
             @Override
-            public void failed(Throwable exc, AsynchronousSocketChannel channel ) { }
+            public void failed(Throwable exc, AsynchronousSocketChannel channel ) {
+            	System.err.println("Failed to receive packet from client");
+            }
         });
     }
     
@@ -199,7 +230,7 @@ public class RewardServer implements Runnable {
 
              @Override
              public void failed(Throwable exc, AsynchronousSocketChannel channel) {
-                 System.out.println( "Fail to send packet to client");
+                 System.err.println( "Fail to send packet to client");
              }
          });
      }
@@ -217,6 +248,7 @@ public class RewardServer implements Runnable {
         try {
 			Thread rewardServer = new Thread(new RewardServer("127.0.0.1", 3575, new RewardScheme()));
 			rewardServer.start();
+			System.out.println("Server started");
         } catch (Exception ex) {
             Logger.getLogger(RewardServer.class.getName()).log(Level.SEVERE, null, ex);
         }

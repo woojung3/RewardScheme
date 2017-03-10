@@ -4,6 +4,7 @@ import kr.ac.mju.islab.RewardProto.RewardPacket;
 import kr.ac.mju.islab.RewardQuery;
 import kr.ac.mju.islab.RewardScheme;
 import kr.ac.mju.islab.RewardServer;
+import kr.ac.mju.islab.RewardClient;
 import kr.ac.mju.islab.secParam.CurveName;
 import kr.ac.mju.islab.secParam.HashName;
 
@@ -31,16 +32,37 @@ import org.junit.Test;
 public class RewardSchemeTest {
 	
 	/*
-	 * RewardQuery related testings.
+	 * RewardQuery related tests.
 	 */
 	@Test
-	public void queryCheck() {
+	public void queryCheck() throws IOException, InterruptedException {
 		// Setup
 		Thread rewardServer = new Thread(new RewardServer("127.0.0.1", 5575, new RewardScheme()));
 		rewardServer.start();
 		RewardQuery query = new RewardQuery("127.0.0.1", 5575);
 		
-		try {
+		query.configureAsHelper();
+		Element[] rtn = query.recIssueHelperPre();
+		Element s = rtn[0];
+		Element r = rtn[1];
+		Element h = rtn[2];
+		Element psi = query.recIssueMaster(h);
+		Element sigma = query.recIssueHelperPost(r, psi, query.rewardScheme.y);
+			
+		assertEquals(true, query.verify(sigma, s, query.rewardScheme.y));
+		
+		rewardServer.interrupt();
+		rewardServer.join();
+	}
+
+	@Test
+	public void queryCheck10() throws IOException, InterruptedException {
+		// Setup
+		Thread rewardServer = new Thread(new RewardServer("127.0.0.1", 4575, new RewardScheme()));
+		rewardServer.start();
+		RewardQuery query = new RewardQuery("127.0.0.1", 4575);
+
+		for (int i=0; i<10; i++) {
 			query.configureAsHelper();
 			Element[] rtn = query.recIssueHelperPre();
 			Element s = rtn[0];
@@ -48,90 +70,90 @@ public class RewardSchemeTest {
 			Element h = rtn[2];
 			Element psi = query.recIssueMaster(h);
 			Element sigma = query.recIssueHelperPost(r, psi, query.rewardScheme.y);
-			
+
 			assertEquals(true, query.verify(sigma, s, query.rewardScheme.y));
-		} catch (IOException | InterruptedException e) {
-			e.printStackTrace();
 		}
-		
-		try {
-			rewardServer.interrupt();
-			rewardServer.join();
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
+
+		rewardServer.interrupt();
+		rewardServer.join();
 	}
 
 	@Test
-	public void queryCheck10() {
-		// Setup
-		Thread rewardServer = new Thread(new RewardServer("127.0.0.1", 4575, new RewardScheme()));
-		rewardServer.start();
-		RewardQuery query = new RewardQuery("127.0.0.1", 4575);
-
-		try {
-			for (int i=0; i<10; i++) {
-				query.configureAsHelper();
-				Element[] rtn = query.recIssueHelperPre();
-				Element s = rtn[0];
-				Element r = rtn[1];
-				Element h = rtn[2];
-				Element psi = query.recIssueMaster(h);
-				Element sigma = query.recIssueHelperPost(r, psi, query.rewardScheme.y);
-
-				assertEquals(true, query.verify(sigma, s, query.rewardScheme.y));
-			}
-		} catch (IOException | InterruptedException e) {
-			e.printStackTrace();
-		}
-
-		try {
-			rewardServer.interrupt();
-			rewardServer.join();
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
-	}
-
-	@Test
-	public void aggQueryCheck() {
+	public void queryCheck500() throws IOException, InterruptedException {
 		// Setup
 		Thread rewardServer = new Thread(new RewardServer("127.0.0.1", 3575, new RewardScheme()));
 		rewardServer.start();
 		RewardQuery query = new RewardQuery("127.0.0.1", 3575);
+
+		for (int i=0; i<500; i++) {
+			query.configureAsHelper();
+			Element[] rtn = query.recIssueHelperPre();
+			Element s = rtn[0];
+			Element r = rtn[1];
+			Element h = rtn[2];
+			Element psi = query.recIssueMaster(h);
+			Element sigma = query.recIssueHelperPost(r, psi, query.rewardScheme.y);
+
+			assertEquals(true, query.verify(sigma, s, query.rewardScheme.y));
+		}
+
+		rewardServer.interrupt();
+		rewardServer.join();
+	}
+
+	@Test
+	public void aggQueryCheck10() throws IOException, InterruptedException {
+		// Setup
+		Thread rewardServer = new Thread(new RewardServer("127.0.0.1", 2575, new RewardScheme()));
+		rewardServer.start();
+		RewardQuery query = new RewardQuery("127.0.0.1", 2575);
 		List<Element> sigmaList = new ArrayList<Element>();
 		List<Element> sList = new ArrayList<Element>();
 		List<Element> yList = new ArrayList<Element>();
 
-		try {
-			for (int i=0; i<1; i++) {
-				query.configureAsHelper();
-				Element[] rtn = query.recIssueHelperPre();
-				Element s = rtn[0];
-				Element r = rtn[1];
-				Element h = rtn[2];
-				Element psi = query.recIssueMaster(h);
-				Element sigma = query.recIssueHelperPost(r, psi, query.rewardScheme.y);
-				sigmaList.add(sigma);
-				sList.add(s);
-				yList.add(query.rewardScheme.y);
+		for (int i=0; i<10; i++) {
+			query.configureAsHelper();
+			Element[] rtn = query.recIssueHelperPre();
+			Element s = rtn[0];
+			Element r = rtn[1];
+			Element h = rtn[2];
+			Element psi = query.recIssueMaster(h);
+			Element sigma = query.recIssueHelperPost(r, psi, query.rewardScheme.y);
+			sigmaList.add(sigma);
+			sList.add(s);
+			yList.add(query.rewardScheme.y);
+		}
+		Element sigmaAgg = query.aggregate(sigmaList);
+		assertEquals(true, query.aggVerify(sigmaAgg, sList, yList));
+		int i = 0;
+		for (Element y : yList) {
+			if (y.isZero()) {
+				System.out.println(i + ": " + y);
 			}
-			Element sigmaAgg = query.aggregate(sigmaList);
-			assertEquals(true, query.aggVerify(sigmaAgg, sList, yList));
-		} catch (IOException | InterruptedException e) {
-			e.printStackTrace();
+			i++;
 		}
 
-		try {
-			rewardServer.interrupt();
-			rewardServer.join();
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
+		rewardServer.interrupt();
+		rewardServer.join();
+	}
+
+	/*
+	 * RewardClient related tests.
+	 */
+	@Test
+	public void packetCheck() throws IOException, InterruptedException {
+		Thread rewardServer = new Thread(new RewardServer("127.0.0.1", 1575, new RewardScheme()));
+		rewardServer.start();
+		new RewardClient("127.0.0.1", 1575, RewardPacket.newBuilder()
+				.setPid(101)
+				.build());
+
+		rewardServer.interrupt();
+		rewardServer.join();
 	}
 	
 	/*
-	 * Belows are RewardScheme related testings. 
+	 * Belows are RewardScheme related tests. 
 	 */
 	@Test
 	public void issuVeriCheck() {
@@ -215,10 +237,10 @@ public class RewardSchemeTest {
 	}
 
 	/*
-	 * Protocol Buffers related testings.
+	 * Protocol Buffers related tests.
 	 */
 	@Test
-	public void protobufWorkingCheck() {
+	public void protobufWorkingCheck() throws InvalidProtocolBufferException {
 		// Setup
 		RewardScheme rewardS = new RewardScheme();
 		
@@ -228,12 +250,9 @@ public class RewardSchemeTest {
 				.build();
 		byte[] rPacketSerialized = rPacket.toByteArray();
 		RewardPacket rPacketDeserialized;
-		try {
-			rPacketDeserialized = RewardPacket.parseFrom(rPacketSerialized);
-			assertEquals(rewardS.y, rewardS.G1.newElementFromBytes(rPacketDeserialized.getE1().toByteArray()));
-		} catch (InvalidProtocolBufferException e) {
-			e.printStackTrace();
-		}
+
+		rPacketDeserialized = RewardPacket.parseFrom(rPacketSerialized);
+		assertEquals(rewardS.y, rewardS.G1.newElementFromBytes(rPacketDeserialized.getE1().toByteArray()));
 	}
 	
 	@Test
@@ -245,7 +264,7 @@ public class RewardSchemeTest {
 	}
 
 	/*
-	 * Belows are jPBC related testings. If you are new to (j)PBC, you can use these as a 
+	 * Belows are jPBC related tests. If you are new to (j)PBC, you can use these as a 
 	 * simple self-explained manual.
 	 * (j)PBC/Arcanum url: 
 	 * http://adecaro.github.io/arcanum/docs/linearmaps/linearmaps.html

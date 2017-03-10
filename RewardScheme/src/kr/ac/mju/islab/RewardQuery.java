@@ -97,10 +97,10 @@ public class RewardQuery {
 	 */
 	public Element recIssueMaster(Element h) throws IOException, InterruptedException {
 		// Pass h to master
-		// Packet for RewardScheme.recIssueMaster / pid 0
+		// Packet for RewardScheme.recIssueMaster / pid 1
 		Element psi = rewardScheme.G1.newElementFromBytes(
 				new RewardClient(host, port, RewardPacket.newBuilder()
-						.setPid(0)
+						.setPid(1)
 						.setE1(ByteString.copyFrom(h.toBytes()))
 						.build())
 				.recvPacket.getE1().toByteArray()
@@ -135,9 +135,9 @@ public class RewardQuery {
 	 * @throws InterruptedException Thrown when a thread is waiting, sleeping, or otherwise occupied, and the thread is interrupted, either before or during the activity
 	 */
 	public boolean verify(Element sigma, Element s, Element y) throws IOException, InterruptedException {
-		// Packet for RewardScheme.verify / pid 1
+		// Packet for RewardScheme.verify / pid 2
 		boolean isValid = new RewardClient(host, port, RewardPacket.newBuilder()
-						.setPid(1)
+						.setPid(2)
 						.setE1(ByteString.copyFrom(sigma.toBytes()))
 						.setE2(ByteString.copyFrom(s.toBytes()))
 						.setE3(ByteString.copyFrom(rewardScheme.y.toBytes()))
@@ -168,8 +168,9 @@ public class RewardQuery {
 	 * @throws InterruptedException Thrown when a thread is waiting, sleeping, or otherwise occupied, and the thread is interrupted, either before or during the activity
 	 */
 	public boolean aggVerify(Element sigmaAgg, List<Element> sList, List<Element> yList) throws IOException, InterruptedException {
+		// Packet for RewardScheme.aggVerify / pid 2
 		boolean isValid = new RewardClient(host, port, RewardPacket.newBuilder()
-						.setPid(2)
+						.setPid(3)
 						.setE1(ByteString.copyFrom(sigmaAgg.toBytes()))
 						.addAllEList1(ElementListToByteStringList(sList))
 						.addAllEList2(ElementListToByteStringList(yList))
