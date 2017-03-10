@@ -1,7 +1,9 @@
 package kr.ac.mju.islab.test;
 
 import kr.ac.mju.islab.RewardProto.RewardPacket;
+import kr.ac.mju.islab.RewardQuery;
 import kr.ac.mju.islab.RewardScheme;
+import kr.ac.mju.islab.RewardServer;
 import kr.ac.mju.islab.secParam.CurveName;
 import kr.ac.mju.islab.secParam.HashName;
 
@@ -13,7 +15,9 @@ import static org.junit.Assert.*;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 
+import java.io.IOException;
 import java.math.BigInteger;
+import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.ArrayList;
 
@@ -27,23 +31,101 @@ import org.junit.Test;
 public class RewardSchemeTest {
 	
 	/*
-	 * Protocol Buffers related testings.
+	 * RewardQuery related testings.
 	 */
 	@Test
-	public void protobufWorkingCheck() {
+	public void queryCheck() {
 		// Setup
-		RewardScheme rewardS = new RewardScheme();
+		Thread rewardServer = new Thread(new RewardServer("127.0.0.1", 5575, new RewardScheme()));
+		rewardServer.start();
+		RewardQuery query = new RewardQuery("127.0.0.1", 5575);
 		
-		RewardPacket rPacket = RewardPacket.newBuilder()
-				.setPid(1)
-				.setE1(ByteString.copyFrom(rewardS.y.toBytes()))
-				.build();
-		byte[] rPacketSerialized = rPacket.toByteArray();
-		RewardPacket rPacketDeserialized;
 		try {
-			rPacketDeserialized = RewardPacket.parseFrom(rPacketSerialized);
-			assertEquals(rewardS.y, rewardS.G1.newElementFromBytes(rPacketDeserialized.getE1().toByteArray()));
-		} catch (InvalidProtocolBufferException e) {
+			query.configureAsHelper();
+			Element[] rtn = query.recIssueHelperPre();
+			Element s = rtn[0];
+			Element r = rtn[1];
+			Element h = rtn[2];
+			Element psi = query.recIssueMaster(h);
+			Element sigma = query.recIssueHelperPost(r, psi, query.rewardScheme.y);
+			
+			assertEquals(true, query.verify(sigma, s, query.rewardScheme.y));
+		} catch (IOException | InterruptedException e) {
+			e.printStackTrace();
+		}
+		
+		try {
+			rewardServer.interrupt();
+			rewardServer.join();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+	}
+
+	@Test
+	public void queryCheck10() {
+		// Setup
+		Thread rewardServer = new Thread(new RewardServer("127.0.0.1", 4575, new RewardScheme()));
+		rewardServer.start();
+		RewardQuery query = new RewardQuery("127.0.0.1", 4575);
+
+		try {
+			for (int i=0; i<10; i++) {
+				query.configureAsHelper();
+				Element[] rtn = query.recIssueHelperPre();
+				Element s = rtn[0];
+				Element r = rtn[1];
+				Element h = rtn[2];
+				Element psi = query.recIssueMaster(h);
+				Element sigma = query.recIssueHelperPost(r, psi, query.rewardScheme.y);
+
+				assertEquals(true, query.verify(sigma, s, query.rewardScheme.y));
+			}
+		} catch (IOException | InterruptedException e) {
+			e.printStackTrace();
+		}
+
+		try {
+			rewardServer.interrupt();
+			rewardServer.join();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+	}
+
+	@Test
+	public void aggQueryCheck() {
+		// Setup
+		Thread rewardServer = new Thread(new RewardServer("127.0.0.1", 3575, new RewardScheme()));
+		rewardServer.start();
+		RewardQuery query = new RewardQuery("127.0.0.1", 3575);
+		List<Element> sigmaList = new ArrayList<Element>();
+		List<Element> sList = new ArrayList<Element>();
+		List<Element> yList = new ArrayList<Element>();
+
+		try {
+			for (int i=0; i<1; i++) {
+				query.configureAsHelper();
+				Element[] rtn = query.recIssueHelperPre();
+				Element s = rtn[0];
+				Element r = rtn[1];
+				Element h = rtn[2];
+				Element psi = query.recIssueMaster(h);
+				Element sigma = query.recIssueHelperPost(r, psi, query.rewardScheme.y);
+				sigmaList.add(sigma);
+				sList.add(s);
+				yList.add(query.rewardScheme.y);
+			}
+			Element sigmaAgg = query.aggregate(sigmaList);
+			assertEquals(true, query.aggVerify(sigmaAgg, sList, yList));
+		} catch (IOException | InterruptedException e) {
+			e.printStackTrace();
+		}
+
+		try {
+			rewardServer.interrupt();
+			rewardServer.join();
+		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
 	}
@@ -113,7 +195,7 @@ public class RewardSchemeTest {
 		Element sigmaAgg = rewardS.aggregate(sigmaList);
 		
 		// Verify
-		rewardS.aggVerify(sigmaAgg, sList, yList);
+		assertEquals(true, rewardS.aggVerify(sigmaAgg, sList, yList));
 	}
 	
 	@Test
@@ -132,6 +214,35 @@ public class RewardSchemeTest {
 		 */
 	}
 
+	/*
+	 * Protocol Buffers related testings.
+	 */
+	@Test
+	public void protobufWorkingCheck() {
+		// Setup
+		RewardScheme rewardS = new RewardScheme();
+		
+		RewardPacket rPacket = RewardPacket.newBuilder()
+				.setPid(1)
+				.setE1(ByteString.copyFrom(rewardS.y.toBytes()))
+				.build();
+		byte[] rPacketSerialized = rPacket.toByteArray();
+		RewardPacket rPacketDeserialized;
+		try {
+			rPacketDeserialized = RewardPacket.parseFrom(rPacketSerialized);
+			assertEquals(rewardS.y, rewardS.G1.newElementFromBytes(rPacketDeserialized.getE1().toByteArray()));
+		} catch (InvalidProtocolBufferException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	@Test
+	public void intToBytesCheck() {
+		int i = 1695609641;
+		byte[] bytes = ByteBuffer.allocate(4).putInt(i).array();
+		int rtnInt = ByteBuffer.wrap(bytes).getInt();
+		assertEquals(i, rtnInt);
+	}
 
 	/*
 	 * Belows are jPBC related testings. If you are new to (j)PBC, you can use these as a 

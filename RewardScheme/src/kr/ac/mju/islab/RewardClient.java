@@ -9,10 +9,22 @@ import java.nio.channels.CompletionHandler;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import kr.ac.mju.islab.RewardProto.RewardPacket;
+
+/**
+ * RewardClient class is used to communicate with RewardServer class;
+ * Unless you have to modify protocols underlying RewardServer/Client communication,
+ * it would be much easier to use RewardQuery, which is a wrapping class
+ * of the RewardClient.
+ * 
+ * @author jwlee
+ * @version 1.0.0
+ * @since 2017-03-08
+ */
 public class RewardClient {
-	public String rtnPacket = "A";
+	public RewardPacket recvPacket;
 	private AsynchronousChannelGroup group;
-    public RewardClient(String host, int port, final String packet) throws IOException, InterruptedException {
+    public RewardClient(String host, int port, final RewardPacket packet) throws IOException, InterruptedException {
         //create a socket channel
         group = AsynchronousChannelGroup.withThreadPool(Executors.newSingleThreadExecutor());
         AsynchronousSocketChannel sockChannel = AsynchronousSocketChannel.open(group);
@@ -30,42 +42,30 @@ public class RewardClient {
             @Override
             public void failed(Throwable exc, AsynchronousSocketChannel channel) {
                 System.out.println("fail to connect to server");
-            }
-            
-        });
-
-        // wait until group.shutdown()/shutdownNow(), or the thread is interrupted:
-        group.awaitTermination(Long.MAX_VALUE, TimeUnit.SECONDS);
-    }
-   
-    private void startRead(final AsynchronousSocketChannel sockChannel) {
-        final ByteBuffer buf = ByteBuffer.allocate(2048);
-        
-        sockChannel.read(buf, sockChannel, new CompletionHandler<Integer, AsynchronousSocketChannel>(){
-
-            @Override
-            public void completed(Integer result, AsynchronousSocketChannel channel) {   
-            	// Save return packet from server into public variable rtnPacket
-                rtnPacket = new String(buf.array());
-				try {
+                try {
 					group.shutdownNow();
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
             }
-
-            @Override
-            public void failed(Throwable exc, AsynchronousSocketChannel channel) {
-                System.out.println("fail to read message from server");
-            }
             
         });
-        
+
+        // wait until group.shutdown()/shutdownNow(), or the thread is interrupted:
+        group.awaitTermination(30, TimeUnit.SECONDS);
     }
-    private void startWrite(final AsynchronousSocketChannel sockChannel, final String message) {
-        ByteBuffer buf = ByteBuffer.allocate(2048);
-        buf.put(message.getBytes());
+   
+    private void startWrite(final AsynchronousSocketChannel sockChannel, final RewardPacket packet) {
+    	// Prepend packetLenInfo to the RewardPacket, so that the other side can determine the packet size
+    	int packetLen = packet.toByteArray().length;
+    	byte[] packetLenInfo = ByteBuffer.allocate(4).putInt(packetLen).array();
+
+        ByteBuffer buf = ByteBuffer.allocate(4 + packetLen);
+        buf.put(packetLenInfo);
+        buf.put(packet.toByteArray());
         buf.flip();
+        // END
+
         sockChannel.write(buf, sockChannel, new CompletionHandler<Integer, AsynchronousSocketChannel>() {
             @Override
             public void completed(Integer result, AsynchronousSocketChannel channel) { }
@@ -77,12 +77,41 @@ public class RewardClient {
         });
     }
     
-    public static void main(String[] args) {
-    	String packet = "echo test";
-		try {
-			System.out.println((new RewardClient("127.0.0.1", 3575, packet)).rtnPacket);
-		} catch (IOException | InterruptedException e) {
-			e.printStackTrace();
-		}
+    private void startRead(final AsynchronousSocketChannel sockChannel) {
+        final ByteBuffer buf = ByteBuffer.allocate(2048);
+        
+        sockChannel.read(buf, sockChannel, new CompletionHandler<Integer, AsynchronousSocketChannel>(){
+
+            @Override
+            public void completed(Integer result, AsynchronousSocketChannel channel) {   
+            	// Process header to get a length of received packet.
+            	byte[] packetLenInfo = new byte[4];
+				buf.flip();
+            	buf.get(packetLenInfo);
+				buf.compact();
+            	
+				byte[] recvBytePacket = new byte[ByteBuffer.wrap(packetLenInfo).getInt()];
+				if (recvBytePacket.length > 2048) {
+					System.out.println("Buffer size is smaller than received packet size: " + recvBytePacket.length);
+				}
+				buf.flip();
+				buf.get(recvBytePacket);
+				buf.compact();
+				// END
+
+            	// Save received packet from server into public variable rtnPacket
+				try {
+					recvPacket = RewardPacket.parseFrom(recvBytePacket);
+					group.shutdownNow();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+            }
+
+            @Override
+            public void failed(Throwable exc, AsynchronousSocketChannel channel) {
+                System.out.println("fail to read message from server");
+            }
+        });
     }
 }

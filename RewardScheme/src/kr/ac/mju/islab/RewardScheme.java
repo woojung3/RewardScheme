@@ -17,6 +17,12 @@ import kr.ac.mju.islab.secParam.*;
 /**
  * RewardScheme class implements 'Privacy-Preserving Reward System for Cloudlet' 
  * developed by Dae Hyun Yum at August 14, 2016.
+ * <p>
+ * If you are not interested in detailed implementation,
+ * you would better use RewardServer/RewardQuery to make application based on
+ * Reward Scheme.
+ * <p>
+ * RewardServer/RewardQuery is a concrete implementation the Reward Scheme.
  * 
  * @author jwlee
  * @version 1.0.0
@@ -28,8 +34,7 @@ public class RewardScheme {
 	private Pairing pairing;
 	@SuppressWarnings("rawtypes")
 	public Field Zr, G1, G2;
-	public Element g1, g2, y;
-	private Element x;
+	public Element g1, g2, x, y;	// x should only be known to master.
 
 	/*
 	 * L is synchronized in the same object. 
@@ -46,7 +51,7 @@ public class RewardScheme {
 	/**
 	 * Class constructor specifying curve name and hash name.
 	 * <p>
-	 * Supported curves: a, a1, d159, d201, d224, e, f, g149.
+	 * Supported curves: a, a1, d159, d201, d224, e, f, g149. <br>
 	 * Supported hashes: SHA1, SHA256, SHA384, SHA512.
 	 * 
 	 * @param curveName the name of elliptic curve
@@ -88,6 +93,9 @@ public class RewardScheme {
 		G1 = pairing.getG1();
 		G2 = pairing.getG2();
 		
+		/*
+		 * Generator generation.
+		 */
 		this.g1 = G1.newRandomElement().getImmutable();
 		if (pairing.isSymmetric()) {
 			this.g2 = g1.duplicate().getImmutable();
@@ -102,13 +110,28 @@ public class RewardScheme {
 		 * y = vk
 		 */
 		x = Zr.newRandomElement().getImmutable();
-		y = g2.powZn(x);
+		y = g2.powZn(x).getImmutable();
 
 		try {
 			this.hash = new Hash(hashName);
 		} catch (NoSuchAlgorithmException e) {
 			e.printStackTrace();
 		}
+	}
+	
+	/**
+	 * Configure y, g1, g2 same as those of Master's so that RewardScheme object
+	 * of Helper can properly communicate with RewardScheme object of Master.
+	 * This is same as setting y, g1, g2 individually.
+	 * 
+	 * @param y Master's public key
+	 * @param g1 generator of G1 that Master is using
+	 * @param g2 generator of G2 that Master is using
+	 */
+	public void configureAsHelper(Element y, Element g1, Element g2) {
+		this.y = y;
+		this.g1 = g1;
+		this.g2 = g2;
 	}
 	
 	/**
