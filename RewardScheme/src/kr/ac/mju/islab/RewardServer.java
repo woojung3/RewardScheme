@@ -96,7 +96,7 @@ public class RewardServer implements Runnable {
         try {
 			group.awaitTermination(Long.MAX_VALUE, TimeUnit.SECONDS);
 		} catch (InterruptedException e) {
-			System.out.println("Server closed by interrupt.");
+			System.out.println("Server interrupted.");
 		}
     }
     
