@@ -15,8 +15,7 @@ import it.unisa.dia.gas.plaf.jpbc.util.io.Base64;
 import kr.ac.mju.islab.secParam.*;
 
 /**
- * RewardScheme class implements 'Privacy-Preserving Reward System for Cloudlet' 
- * developed by Dae Hyun Yum at August 14, 2016.
+ * RewardScheme class implements 'Privacy-Aware Reward System'.
  * <p>
  * If you are not interested in detailed implementation,
  * you would better use RewardServer/RewardQuery to make application based on
@@ -162,7 +161,7 @@ public class RewardScheme {
 	}
 	
 	/**
-	 * Returns element psi which master generates in recIssue Process
+	 * Returns element psi which master generates in recIssue Process.
 	 * Helper provides h, and later generates receipt sigma with returned value psi.
 	 * 
 	 * @param h the element generated and provided by Helper

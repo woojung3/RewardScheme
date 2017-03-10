@@ -22,8 +22,7 @@ import kr.ac.mju.islab.RewardProto.RewardPacket;
 
 /**
  * RewardServer class is a server-side concrete implementation of 
- * 'Privacy-Preserving Reward System for Cloudnet' developed by
- * Dae Hyun Yum at August 14, 2016.
+ * 'Privacy-Aware Reward System'.
  * <p>
  * RewardServer responds to query from a client-side concrete implementation,
  * which are RewardQuery objects.

@@ -11,8 +11,7 @@ import kr.ac.mju.islab.RewardProto.RewardPacket;
 
 /**
  * RewardQuery class is a client-side concrete implementation of 
- * 'Privacy-Preserving Reward System for Cloudnet' developed by
- * Dae Hyun Yum at August 14, 2016.
+ * 'Privacy-Aware Reward System'.
  * <p>
  * RewardQuery class does query on a server-side concrete implementation,
  * which are RewardServer objects.
