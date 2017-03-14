@@ -42,14 +42,14 @@ public class RewardSchemeTest {
 		RewardQuery query = new RewardQuery("127.0.0.1", 5575);
 		
 		query.configureAsHelper();
-		Element[] rtn = query.recIssueHelperPre();
-		Element s = rtn[0];
-		Element r = rtn[1];
-		Element h = rtn[2];
-		Element psi = query.recIssueMaster(h);
-		Element sigma = query.recIssueHelperPost(r, psi, query.rewardScheme.y);
+		byte[][] rtn = query.recIssueHelperPre();
+		byte[] s = rtn[0];
+		byte[] r = rtn[1];
+		byte[] h = rtn[2];
+		byte[] psi = query.recIssueMaster(h);
+		byte[] sigma = query.recIssueHelperPost(r, psi, query.gety());
 			
-		assertEquals(true, query.verify(sigma, s, query.rewardScheme.y));
+		assertEquals(true, query.verify(sigma, s, query.gety()));
 		
 		rewardServer.interrupt();
 		rewardServer.join();
@@ -64,14 +64,14 @@ public class RewardSchemeTest {
 
 		for (int i=0; i<10; i++) {
 			query.configureAsHelper();
-			Element[] rtn = query.recIssueHelperPre();
-			Element s = rtn[0];
-			Element r = rtn[1];
-			Element h = rtn[2];
-			Element psi = query.recIssueMaster(h);
-			Element sigma = query.recIssueHelperPost(r, psi, query.rewardScheme.y);
-
-			assertEquals(true, query.verify(sigma, s, query.rewardScheme.y));
+			byte[][] rtn = query.recIssueHelperPre();
+			byte[] s = rtn[0];
+			byte[] r = rtn[1];
+			byte[] h = rtn[2];
+			byte[] psi = query.recIssueMaster(h);
+			byte[] sigma = query.recIssueHelperPost(r, psi, query.gety());
+				
+			assertEquals(true, query.verify(sigma, s, query.gety()));
 		}
 
 		rewardServer.interrupt();
@@ -87,14 +87,14 @@ public class RewardSchemeTest {
 
 		for (int i=0; i<500; i++) {
 			query.configureAsHelper();
-			Element[] rtn = query.recIssueHelperPre();
-			Element s = rtn[0];
-			Element r = rtn[1];
-			Element h = rtn[2];
-			Element psi = query.recIssueMaster(h);
-			Element sigma = query.recIssueHelperPost(r, psi, query.rewardScheme.y);
-
-			assertEquals(true, query.verify(sigma, s, query.rewardScheme.y));
+			byte[][] rtn = query.recIssueHelperPre();
+			byte[] s = rtn[0];
+			byte[] r = rtn[1];
+			byte[] h = rtn[2];
+			byte[] psi = query.recIssueMaster(h);
+			byte[] sigma = query.recIssueHelperPost(r, psi, query.gety());
+				
+			assertEquals(true, query.verify(sigma, s, query.gety()));
 		}
 
 		rewardServer.interrupt();
@@ -107,31 +107,24 @@ public class RewardSchemeTest {
 		Thread rewardServer = new Thread(new RewardServer("127.0.0.1", 2575, new RewardScheme()));
 		rewardServer.start();
 		RewardQuery query = new RewardQuery("127.0.0.1", 2575);
-		List<Element> sigmaList = new ArrayList<Element>();
-		List<Element> sList = new ArrayList<Element>();
-		List<Element> yList = new ArrayList<Element>();
+		List<byte[]> sigmaList = new ArrayList<byte[]>();
+		List<byte[]> sList = new ArrayList<byte[]>();
+		List<byte[]> yList = new ArrayList<byte[]>();
 
 		for (int i=0; i<10; i++) {
 			query.configureAsHelper();
-			Element[] rtn = query.recIssueHelperPre();
-			Element s = rtn[0];
-			Element r = rtn[1];
-			Element h = rtn[2];
-			Element psi = query.recIssueMaster(h);
-			Element sigma = query.recIssueHelperPost(r, psi, query.rewardScheme.y);
+			byte[][] rtn = query.recIssueHelperPre();
+			byte[] s = rtn[0];
+			byte[] r = rtn[1];
+			byte[] h = rtn[2];
+			byte[] psi = query.recIssueMaster(h);
+			byte[] sigma = query.recIssueHelperPost(r, psi, query.gety());
 			sigmaList.add(sigma);
 			sList.add(s);
-			yList.add(query.rewardScheme.y);
+			yList.add(query.gety());
 		}
-		Element sigmaAgg = query.aggregate(sigmaList);
+		byte[] sigmaAgg = query.aggregate(sigmaList);
 		assertEquals(true, query.aggVerify(sigmaAgg, sList, yList));
-		int i = 0;
-		for (Element y : yList) {
-			if (y.isZero()) {
-				System.out.println(i + ": " + y);
-			}
-			i++;
-		}
 
 		rewardServer.interrupt();
 		rewardServer.join();

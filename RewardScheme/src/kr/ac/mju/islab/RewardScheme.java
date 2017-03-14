@@ -27,6 +27,7 @@ import kr.ac.mju.islab.secParam.*;
  * @version 1.0.0
  * @since 2017-03-08
  */
+
 public class RewardScheme {
 	public CurveName curveName;
 	public Hash hash;
