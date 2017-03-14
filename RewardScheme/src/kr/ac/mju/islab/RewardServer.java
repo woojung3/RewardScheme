@@ -39,6 +39,9 @@ public class RewardServer implements Runnable {
 	public String bindAddr;
 	public int bindPort;
 	private RewardScheme rewardScheme;
+    private AsynchronousServerSocketChannel serverSock = null;
+    private AsynchronousChannelGroup group = null;
+
 	
 	/**
 	 * Class constructor specifying bind address, bind port,
@@ -66,10 +69,8 @@ public class RewardServer implements Runnable {
         InetSocketAddress sockAddr = new InetSocketAddress(bindAddr, bindPort);
         
         //create a socket channel and bind to local bind address
-        AsynchronousChannelGroup group = null;
-        AsynchronousServerSocketChannel serverSock = null;
 		try {
-			group = AsynchronousChannelGroup.withThreadPool(Executors.newSingleThreadExecutor());
+			group = AsynchronousChannelGroup.withThreadPool(Executors.newCachedThreadPool());
 			serverSock = AsynchronousServerSocketChannel.open(group).bind(sockAddr);
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -80,15 +81,18 @@ public class RewardServer implements Runnable {
 
             @Override
             public void completed(AsynchronousSocketChannel sockChannel, AsynchronousServerSocketChannel serverSock) {
-                //a connection is accepted, start to accept next connection
-                serverSock.accept(serverSock, this);
-                //start to read message from the client
+				//a connection is accepted, start to accept next connection
+				serverSock.accept(serverSock, this);
+
+				//start to read message from the client
 				startRead(sockChannel);
             }
 
             @Override
             public void failed(Throwable exc, AsynchronousServerSocketChannel serverSock) {
-                System.err.println("Fail to accept a connection");
+            	if (serverSock.isOpen() == true) {
+					System.err.println("Fail to accept a connection");
+            	}
             }
         } );
 
@@ -97,6 +101,13 @@ public class RewardServer implements Runnable {
 			group.awaitTermination(Long.MAX_VALUE, TimeUnit.SECONDS);
 		} catch (InterruptedException e) {
 			System.out.println("Server interrupted.");
+			Thread.currentThread().interrupt();
+			try {
+				serverSock.close();
+				serverSock = AsynchronousServerSocketChannel.open().bind(sockAddr);
+			} catch (IOException e1) { }
+		} finally {
+			group.shutdown();
 		}
     }
     
@@ -210,9 +221,6 @@ public class RewardServer implements Runnable {
                 //END
 
                 startWrite(channel, sendBuf);
-                
-                // Start to read next message again
-                startRead(channel);
             }
 
             @Override
@@ -226,7 +234,14 @@ public class RewardServer implements Runnable {
          sockChannel.write(buf, sockChannel, new CompletionHandler<Integer, AsynchronousSocketChannel>() {
 
              @Override
-             public void completed(Integer result, AsynchronousSocketChannel channel) { }
+             public void completed(Integer result, AsynchronousSocketChannel channel) { 
+            	try {
+					channel.close();
+					Thread.currentThread().interrupt();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+             }
 
              @Override
              public void failed(Throwable exc, AsynchronousSocketChannel channel) {

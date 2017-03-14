@@ -22,6 +22,7 @@ import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.ArrayList;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 
@@ -78,6 +79,7 @@ public class RewardSchemeTest {
 		rewardServer.join();
 	}
 
+	@Ignore
 	@Test
 	public void queryCheck500() throws IOException, InterruptedException {
 		// Setup
