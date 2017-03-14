@@ -12,14 +12,13 @@
 		</attributes>
 	</classpathentry>
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
-	<classpathentry kind="lib" path="lib/jpbc-2.0.0/jars/jpbc-api-2.0.0.jar" sourcepath="lib/jpbc-2.0.0/jpbc-api"/>
-	<classpathentry kind="lib" path="lib/jpbc-2.0.0/jars/jpbc-mm-2.0.0.jar" sourcepath="lib/jpbc-2.0.0/jpbc-mm"/>
-	<classpathentry kind="lib" path="lib/jpbc-2.0.0/jars/jpbc-plaf-2.0.0.jar" sourcepath="lib/jpbc-2.0.0/jpbc-plaf"/>
-	<classpathentry kind="lib" path="lib/jpbc-2.0.0/jars/jpbc-pbc-2.0.0.jar" sourcepath="lib/jpbc-2.0.0/jpbc-pbc"/>
 	<classpathentry kind="con" path="org.eclipse.m2e.MAVEN2_CLASSPATH_CONTAINER">
 		<attributes>
 			<attribute name="maven.pomderived" value="true"/>
 		</attributes>
 	</classpathentry>
+	<classpathentry kind="lib" path="lib/jpbc-2.0.0/jars/jpbc-mm-2.0.0.jar"/>
+	<classpathentry kind="lib" path="lib/jpbc-2.0.0/jars/jpbc-plaf-2.0.0.jar"/>
+	<classpathentry kind="lib" path="lib/jpbc-2.0.0/jars/jpbc-api-2.0.0.jar"/>
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>

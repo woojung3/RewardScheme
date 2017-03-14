@@ -4,7 +4,7 @@
   <artifactId>RewardScheme</artifactId>
   <version>0.0.1-SNAPSHOT</version>
   <name>RewardScheme</name>
-  <description>This project implement reward scheme developted by DHYUM.</description>
+  <description>This project implement reward scheme.</description>
   <build>
     <sourceDirectory>src</sourceDirectory>
     <resources>
