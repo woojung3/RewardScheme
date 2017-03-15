@@ -239,7 +239,6 @@ public class RewardServer implements Runnable {
 					channel.close();
 					Thread.currentThread().interrupt();
 				} catch (IOException e) {
-					e.printStackTrace();
 				}
              }
 
