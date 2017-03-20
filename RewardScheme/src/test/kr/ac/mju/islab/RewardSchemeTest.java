@@ -1,4 +1,4 @@
-package kr.ac.mju.islab.test;
+package test.kr.ac.mju.islab;
 
 import kr.ac.mju.islab.RewardProto.RewardPacket;
 import kr.ac.mju.islab.RewardQuery;

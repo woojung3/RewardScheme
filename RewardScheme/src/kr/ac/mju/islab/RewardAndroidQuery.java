@@ -29,7 +29,7 @@ import kr.ac.mju.islab.RewardProto.RewardPacket;
  * @version 1.0.0
  * @since 2017-03-08
  */
-public class RewardQuery {
+public class RewardAndroidQuery {
 	public String host;
 	public int port;
 	private RewardScheme rewardScheme;
@@ -40,7 +40,7 @@ public class RewardQuery {
 	 * @param host the ip of server to connect
 	 * @param port the port of server to connect
 	 */
-	public RewardQuery(String host, int port) {
+	public RewardAndroidQuery(String host, int port) {
 		this.host = host;
 		this.port = port;
 		this.rewardScheme = new RewardScheme();
@@ -66,7 +66,7 @@ public class RewardQuery {
 	public void configureAsHelper() throws IOException, InterruptedException {
 		// Packet for RewardScheme.y / pid 101
 		Element y = rewardScheme.G2.newElementFromBytes(
-				new RewardClient(host, port, RewardPacket.newBuilder()
+				new RewardAndroidClient(host, port, RewardPacket.newBuilder()
 						.setPid(101)
 						.build())
 				.recvPacket.getE1().toByteArray()
@@ -107,13 +107,17 @@ public class RewardQuery {
 	public byte[] recIssueMaster(byte[] hBytes) throws IOException, InterruptedException {
 		// Pass h to master
 		// Packet for RewardScheme.recIssueMaster / pid 1
-		Element psi = rewardScheme.G1.newElementFromBytes(
-				new RewardClient(host, port, RewardPacket.newBuilder()
+		RewardAndroidClient rtn = new RewardAndroidClient(host, port, RewardPacket.newBuilder()
 						.setPid(1)
 						.setE1(ByteString.copyFrom(hBytes))
-						.build())
-				.recvPacket.getE1().toByteArray()
-				).getImmutable();
+						.build());
+		Element psi = null;
+		if (rtn.recvPacket.getPid() == 999) {
+			return null;
+		}
+		else {
+			psi = rewardScheme.G1.newElementFromBytes(rtn.recvPacket.getE1().toByteArray()).getImmutable();
+		}
 		return psi.toBytes();
 	}
 	
@@ -148,7 +152,7 @@ public class RewardQuery {
 	 */
 	public boolean verify(byte[] sigmaBytes, byte[] sBytes, byte[] yBytes) throws IOException, InterruptedException {
 		// Packet for RewardScheme.verify / pid 2
-		boolean isValid = new RewardClient(host, port, RewardPacket.newBuilder()
+		boolean isValid = new RewardAndroidClient(host, port, RewardPacket.newBuilder()
 						.setPid(2)
 						.setE1(ByteString.copyFrom(sigmaBytes))
 						.setE2(ByteString.copyFrom(sBytes))
@@ -186,7 +190,7 @@ public class RewardQuery {
 	 */
 	public boolean aggVerify(byte[] sigmaAggBytes, List<byte[]> sBytesList, List<byte[]> yBytesList) throws IOException, InterruptedException {
 		// Packet for RewardScheme.aggVerify / pid 2
-		boolean isValid = new RewardClient(host, port, RewardPacket.newBuilder()
+		boolean isValid = new RewardAndroidClient(host, port, RewardPacket.newBuilder()
 						.setPid(3)
 						.setE1(ByteString.copyFrom(sigmaAggBytes))
 						.addAllEList1(BytesListToByteStringList(sBytesList))
@@ -208,23 +212,41 @@ public class RewardQuery {
 	 * @throws IOException Signals that an I/O exception of some sort has occurred
 	 * @throws InterruptedException Thrown when a thread is waiting, sleeping, or otherwise occupied, and the thread is interrupted, either before or during the activity
 	 */
-	public boolean verifyREST(byte[] sigmaBytes, byte[] sBytes, byte[] yBytes, String hostREST, int portREST) throws IOException, InterruptedException {
-		RewardPacket sendPacket = RewardPacket.newBuilder()
-						.setPid(2)
-						.setE1(ByteString.copyFrom(sigmaBytes))
-						.setE2(ByteString.copyFrom(sBytes))
-						.setE3(ByteString.copyFrom(yBytes))
-						.build();
-		String strRest = new String(Hex.encodeHex(sendPacket.toByteArray()));
-		
-		URL url = new URL("http://" + hostREST + ":" + portREST + "/verify/" + strRest);
-		URLConnection con = url.openConnection();
-		InputStream in = con.getInputStream();
-		String encoding = con.getContentEncoding();
-		encoding = encoding == null ? "UTF-8" : encoding;
-		String body = IOUtils.toString(in, encoding);
+	public boolean verifyREST(final byte[] sigmaBytes, final byte[] sBytes, final byte[] yBytes, final String hostREST, final int portREST) throws InterruptedException {
+		class One extends Thread {
+			public boolean isValid;
 
-		return Boolean.valueOf(body);
+			@Override
+			public void run() {
+				try {
+					RewardPacket sendPacket = RewardPacket.newBuilder()
+									.setPid(2)
+									.setE1(ByteString.copyFrom(sigmaBytes))
+									.setE2(ByteString.copyFrom(sBytes))
+									.setE3(ByteString.copyFrom(yBytes))
+									.build();
+					String strRest = new String(Hex.encodeHex(sendPacket.toByteArray()));
+
+					URL url = new URL("http://" + hostREST + ":" + portREST + "/verify/" + strRest);
+					URLConnection con = url.openConnection();
+					InputStream in = con.getInputStream();
+					String encoding = con.getContentEncoding();
+					encoding = encoding == null ? "UTF-8" : encoding;
+					String body = IOUtils.toString(in, encoding);
+					isValid = Boolean.valueOf(body);
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+				
+				Thread.currentThread().interrupt();
+    		}
+		}
+			
+		One one = new One();
+		one.start();
+		one.join();
+
+		return Boolean.valueOf(one.isValid);
 	}
 	
 	// TODO
@@ -241,23 +263,41 @@ public class RewardQuery {
 	 * @throws IOException Signals that an I/O exception of some sort has occurred
 	 * @throws InterruptedException Thrown when a thread is waiting, sleeping, or otherwise occupied, and the thread is interrupted, either before or during the activity
 	 */
-	public boolean aggVerifyREST(byte[] sigmaAggBytes, List<byte[]> sBytesList, List<byte[]> yBytesList, String hostREST, int portREST) throws IOException, InterruptedException {
-		RewardPacket sendPacket = RewardPacket.newBuilder()
-						.setPid(3)
-						.setE1(ByteString.copyFrom(sigmaAggBytes))
-						.addAllEList1(BytesListToByteStringList(sBytesList))
-						.addAllEList2(BytesListToByteStringList(yBytesList))
-						.build();
-		String strRest = new String(Hex.encodeHex(sendPacket.toByteArray()));
-		
-		URL url = new URL("http://" + hostREST + ":" + portREST + "/aggVerify/" + strRest);
-		URLConnection con = url.openConnection();
-		InputStream in = con.getInputStream();
-		String encoding = con.getContentEncoding();
-		encoding = encoding == null ? "UTF-8" : encoding;
-		String body = IOUtils.toString(in, encoding);
+	public boolean aggVerifyREST(final byte[] sigmaAggBytes, final List<byte[]> sBytesList, final List<byte[]> yBytesList, final String hostREST, final int portREST) throws InterruptedException {
+		class One extends Thread {
+			public boolean isValid;
 
-		return Boolean.valueOf(body);
+			@Override
+			public void run() {
+				try {
+					RewardPacket sendPacket = RewardPacket.newBuilder()
+									.setPid(3)
+									.setE1(ByteString.copyFrom(sigmaAggBytes))
+									.addAllEList1(BytesListToByteStringList(sBytesList))
+									.addAllEList2(BytesListToByteStringList(yBytesList))
+									.build();
+					String strRest = new String(Hex.encodeHex(sendPacket.toByteArray()));
+					
+					URL url = new URL("http://" + hostREST + ":" + portREST + "/aggVerify/" + strRest);
+					URLConnection con = url.openConnection();
+					InputStream in = con.getInputStream();
+					String encoding = con.getContentEncoding();
+					encoding = encoding == null ? "UTF-8" : encoding;
+					String body = IOUtils.toString(in, encoding);
+					isValid = Boolean.valueOf(body);
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+				
+				Thread.currentThread().interrupt();
+    		}
+		}
+			
+		One one = new One();
+		one.start();
+		one.join();
+
+		return Boolean.valueOf(one.isValid);
 	}
 	
 	private List<ByteString> BytesListToByteStringList(List<byte[]> bList) {

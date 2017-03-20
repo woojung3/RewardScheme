@@ -3,10 +3,9 @@ package kr.ac.mju.islab;
 import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import it.unisa.dia.gas.jpbc.*;
 import it.unisa.dia.gas.plaf.jpbc.pairing.PairingFactory;
@@ -40,7 +39,7 @@ public class RewardScheme {
 	 * L is synchronized in the same object. 
 	 * Be careful that L is not synchronized between different objects.
 	 */
-	public Set<Element> L = Collections.synchronizedSet(new HashSet<Element>());
+	public List<Element> L = Collections.synchronizedList(new ArrayList<Element>());
 
 	/**
 	 * Class constructor - default set to curve type a (symmetric) and SHA256.
@@ -92,17 +91,32 @@ public class RewardScheme {
 		Zr = pairing.getZr();
 		G1 = pairing.getG1();
 		G2 = pairing.getG2();
+
+		try {
+			this.hash = new Hash(hashName);
+		} catch (NoSuchAlgorithmException e) {
+			e.printStackTrace();
+		}
 		
 		/*
-		 * Generator generation.
+		 * Generator generation. 
 		 */
-		this.g1 = G1.newRandomElement().getImmutable();
+//		this.g1 = G1.newRandomElement().getImmutable();
+//		if (pairing.isSymmetric()) {
+//			this.g2 = g1.duplicate().getImmutable();
+//		}
+//		else {
+//			this.g2 = G2.newRandomElement().getImmutable();
+//		}
+		byte[] digest = hash.getByteDigest("veryverysecurekey029x8c4732nbjdu!");
+		this.g1 = G1.newElement().setFromHash(digest, 0, digest.length).getImmutable();
 		if (pairing.isSymmetric()) {
 			this.g2 = g1.duplicate().getImmutable();
 		}
 		else {
-			this.g2 = G2.newRandomElement().getImmutable();
+			this.g2 = G2.newElement().setFromHash(digest, 0, digest.length).getImmutable();
 		}
+		////////////////
 		
 		/*
 		 * Key Generation.
@@ -111,27 +125,16 @@ public class RewardScheme {
 		 */
 		x = Zr.newRandomElement().getImmutable();
 		y = g2.powZn(x).getImmutable();
-
-		try {
-			this.hash = new Hash(hashName);
-		} catch (NoSuchAlgorithmException e) {
-			e.printStackTrace();
-		}
 	}
 	
 	/**
-	 * Configure y, g1, g2 same as those of Master's so that RewardScheme object
+	 * Configure y same as that of Master's so that RewardScheme object
 	 * of Helper can properly communicate with RewardScheme object of Master.
-	 * This is same as setting y, g1, g2 individually.
 	 * 
 	 * @param y Master's public key
-	 * @param g1 generator of G1 that Master is using
-	 * @param g2 generator of G2 that Master is using
 	 */
-	public void configureAsHelper(Element y, Element g1, Element g2) {
+	public void configureAsHelper(Element y) {
 		this.y = y;
-		this.g1 = g1;
-		this.g2 = g2;
 	}
 	
 	/**
