@@ -227,7 +227,6 @@ public class RewardQuery {
 		return Boolean.valueOf(body);
 	}
 	
-	// TODO
 	/**
 	 * Returns boolean value which indicates the validness of the 
 	 * aggregated signature sigma.

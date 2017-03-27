@@ -18,14 +18,8 @@ import it.unisa.dia.gas.jpbc.Field;
 import kr.ac.mju.islab.RewardProto.RewardPacket;
 
 /**
- * RewardServer class is a server-side concrete implementation of 
- * 'Privacy-Aware Reward System'.
- * <p>
- * RewardServer responds to query from a client-side concrete implementation,
- * which are RewardQuery objects.
- * <p>
- * If you are only interested on application,
- * you do not need to check detailed class like RewardScheme.
+ * RewardAndroidServer class is a port of RewardServer for Android.
+ * Its usage is same as RewardServer. Check jDoc for RewardServer for more details.
  * 
  * @author jwlee
  * @version 1.0.0
@@ -40,7 +34,7 @@ public class RewardAndroidServer implements Runnable {
 	
 	/**
 	 * Class constructor specifying bind address, bind port,
-	 * and a object of RewardScheme which is used as an engine of RewardServer. 
+	 * and a object of RewardScheme which is used as an engine of RewardAndroidServer. 
 	 * 
 	 * @param bindAddr the bind address of the server. usually 127.0.0.1
 	 * @param bindPort the bind port of the server
@@ -57,11 +51,11 @@ public class RewardAndroidServer implements Runnable {
     }
 
     /**
-     * RewardScheme implements Runnable, so could act as thread.
+     * RewardAndroidServer implements Runnable, so could act as thread.
      * <p>
      * Usage: <br>
-     * Thread rewardServer = new Thread(new RewardServer("127.0.0.1", 3575, new RewardScheme())); <br>
-     * rewardServer.start();
+     * Thread rewardAndroidServer = new Thread(new RewardAndroidServer("127.0.0.1", 3575, new RewardScheme())); <br>
+     * rewardAndroidServer.start();
      */
     @Override
     public void run() {

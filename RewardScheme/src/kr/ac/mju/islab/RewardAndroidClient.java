@@ -10,10 +10,8 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import kr.ac.mju.islab.RewardProto.RewardPacket;
 
 /**
- * RewardClient class is used to communicate with RewardServer class;
- * Unless you have to modify protocols underlying RewardServer/Client communication,
- * it would be much easier to use RewardQuery, which is a wrapping class
- * of the RewardClient.
+ * RewardAndroidClient class is a port of RewardClient for Android.
+ * Its usage is same as RewardClient. Check jDoc for RewardClient for more details.
  * 
  * @author jwlee
  * @version 1.0.0

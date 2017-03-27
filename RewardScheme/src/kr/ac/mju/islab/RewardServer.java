@@ -58,7 +58,7 @@ public class RewardServer implements Runnable {
     }
 
     /**
-     * RewardScheme implements Runnable, so could act as thread.
+     * RewardServer implements Runnable, so could act as thread.
      * <p>
      * Usage: <br>
      * Thread rewardServer = new Thread(new RewardServer("127.0.0.1", 3575, new RewardScheme())); <br>

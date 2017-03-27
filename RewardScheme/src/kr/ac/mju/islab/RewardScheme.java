@@ -50,7 +50,7 @@ public class RewardScheme {
 	/**
 	 * Class constructor specifying curve name and hash name.
 	 * <p>
-	 * Supported curves: a, a1, d159, d201, d224, e, f, g149. <br>
+	 * Supported curves: a, a1. <br>
 	 * Supported hashes: SHA1, SHA256, SHA384, SHA512.
 	 * 
 	 * @param curveName the name of elliptic curve
@@ -60,30 +60,12 @@ public class RewardScheme {
 		// Setup
 		this.curveName = curveName;
 
-		switch(curveName){
+		switch(curveName){	// a, a1 is a symmetric curve.
 			case a:
 				pairing = PairingFactory.getPairing("params/curves/a.properties");
 				break;
 			case a1:
 				pairing = PairingFactory.getPairing("params/curves/a1.properties");
-				break;
-			case d159:
-				pairing = PairingFactory.getPairing("params/curves/d159.properties");
-				break;
-			case d201:
-				pairing = PairingFactory.getPairing("params/curves/d201.properties");
-				break;
-			case d224:
-				pairing = PairingFactory.getPairing("params/curves/d224.properties");
-				break;
-			case e:
-				pairing = PairingFactory.getPairing("params/curves/e.properties");
-				break;
-			case f:
-				pairing = PairingFactory.getPairing("params/curves/f.properties");
-				break;
-			case g149:
-				pairing = PairingFactory.getPairing("params/curves/g149.properties");
 				break;
 		}
 		PairingFactory.getInstance().setUsePBCWhenPossible(true);
@@ -101,19 +83,12 @@ public class RewardScheme {
 		/*
 		 * Generator generation. 
 		 */
-//		this.g1 = G1.newRandomElement().getImmutable();
-//		if (pairing.isSymmetric()) {
-//			this.g2 = g1.duplicate().getImmutable();
-//		}
-//		else {
-//			this.g2 = G2.newRandomElement().getImmutable();
-//		}
 		byte[] digest = hash.getByteDigest("veryverysecurekey029x8c4732nbjdu!");
 		this.g1 = G1.newElement().setFromHash(digest, 0, digest.length).getImmutable();
 		if (pairing.isSymmetric()) {
 			this.g2 = g1.duplicate().getImmutable();
 		}
-		else {
+		else {	// Asymmetric is not supported. Maybe implemented later...?
 			this.g2 = G2.newElement().setFromHash(digest, 0, digest.length).getImmutable();
 		}
 		////////////////

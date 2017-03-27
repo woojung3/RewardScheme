@@ -16,14 +16,8 @@ import it.unisa.dia.gas.jpbc.Element;
 import kr.ac.mju.islab.RewardProto.RewardPacket;
 
 /**
- * RewardQuery class is a client-side concrete implementation of 
- * 'Privacy-Aware Reward System'.
- * <p>
- * RewardQuery class does query on a server-side concrete implementation,
- * which are RewardServer objects.
- * <p>
- * If you are only interested on application,
- * you do not need to check detailed class like RewardScheme.
+ * RewardAndroidQuery class is a port of RewardQuery for Android.
+ * Its usage is same as RewardQuery. Check jDoc for RewardQuery for more details.
  * 
  * @author jwlee
  * @version 1.0.0
@@ -209,7 +203,6 @@ public class RewardAndroidQuery {
 	 * @param hostREST host of a RESTful server
 	 * @param portREST port of a RESTful server
 	 * @return validness of the signature sigma
-	 * @throws IOException Signals that an I/O exception of some sort has occurred
 	 * @throws InterruptedException Thrown when a thread is waiting, sleeping, or otherwise occupied, and the thread is interrupted, either before or during the activity
 	 */
 	public boolean verifyREST(final byte[] sigmaBytes, final byte[] sBytes, final byte[] yBytes, final String hostREST, final int portREST) throws InterruptedException {
@@ -249,7 +242,6 @@ public class RewardAndroidQuery {
 		return Boolean.valueOf(one.isValid);
 	}
 	
-	// TODO
 	/**
 	 * Returns boolean value which indicates the validness of the 
 	 * aggregated signature sigma.
@@ -260,7 +252,6 @@ public class RewardAndroidQuery {
 	 * @param hostREST host of a RESTful server
 	 * @param portREST port of a RESTful server
 	 * @return validness of the aggregated signature sigma
-	 * @throws IOException Signals that an I/O exception of some sort has occurred
 	 * @throws InterruptedException Thrown when a thread is waiting, sleeping, or otherwise occupied, and the thread is interrupted, either before or during the activity
 	 */
 	public boolean aggVerifyREST(final byte[] sigmaAggBytes, final List<byte[]> sBytesList, final List<byte[]> yBytesList, final String hostREST, final int portREST) throws InterruptedException {
