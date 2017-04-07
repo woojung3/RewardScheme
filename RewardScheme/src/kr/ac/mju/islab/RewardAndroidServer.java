@@ -89,7 +89,11 @@ public class RewardAndroidServer implements Runnable {
 			ByteBuffer buf = ByteBuffer.allocate(32768);	// Capable of dealing with #100 aggregated receipt
 			try {
 				sockChannel.read(buf);
-			} catch (IOException e1) {
+			} catch (Exception e1) {
+				if (sockChannel == null) {
+					Thread.currentThread().interrupt();
+					return;
+				}
 				e1.printStackTrace();
 			}
 
