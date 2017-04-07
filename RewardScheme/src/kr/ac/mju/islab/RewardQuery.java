@@ -107,13 +107,17 @@ public class RewardQuery {
 	public byte[] recIssueMaster(byte[] hBytes) throws IOException, InterruptedException {
 		// Pass h to master
 		// Packet for RewardScheme.recIssueMaster / pid 1
-		Element psi = rewardScheme.G1.newElementFromBytes(
-				new RewardClient(host, port, RewardPacket.newBuilder()
+		RewardAndroidClient rtn = new RewardAndroidClient(host, port, RewardPacket.newBuilder()
 						.setPid(1)
 						.setE1(ByteString.copyFrom(hBytes))
-						.build())
-				.recvPacket.getE1().toByteArray()
-				).getImmutable();
+						.build());
+		Element psi = null;
+		if (rtn.recvPacket.getPid() == 999) {
+			return null;
+		}
+		else {
+			psi = rewardScheme.G1.newElementFromBytes(rtn.recvPacket.getE1().toByteArray()).getImmutable();
+		}
 		return psi.toBytes();
 	}
 	

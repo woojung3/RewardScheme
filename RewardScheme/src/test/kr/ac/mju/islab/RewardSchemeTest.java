@@ -38,7 +38,7 @@ public class RewardSchemeTest {
 	@Test
 	public void queryCheck() throws IOException, InterruptedException {
 		// Setup
-		Thread rewardServer = new Thread(new RewardServer("127.0.0.1", 5575, new RewardScheme()));
+		Thread rewardServer = new Thread(new RewardServer(5575, new RewardScheme()));
 		rewardServer.start();
 		RewardQuery query = new RewardQuery("127.0.0.1", 5575);
 		
@@ -59,7 +59,7 @@ public class RewardSchemeTest {
 	@Test
 	public void queryCheck10() throws IOException, InterruptedException {
 		// Setup
-		Thread rewardServer = new Thread(new RewardServer("127.0.0.1", 4575, new RewardScheme()));
+		Thread rewardServer = new Thread(new RewardServer(4575, new RewardScheme()));
 		rewardServer.start();
 		RewardQuery query = new RewardQuery("127.0.0.1", 4575);
 
@@ -83,7 +83,7 @@ public class RewardSchemeTest {
 	@Test
 	public void queryCheck500() throws IOException, InterruptedException {
 		// Setup
-		Thread rewardServer = new Thread(new RewardServer("127.0.0.1", 3575, new RewardScheme()));
+		Thread rewardServer = new Thread(new RewardServer(3575, new RewardScheme()));
 		rewardServer.start();
 		RewardQuery query = new RewardQuery("127.0.0.1", 3575);
 
@@ -106,7 +106,7 @@ public class RewardSchemeTest {
 	@Test
 	public void aggQueryCheck10() throws IOException, InterruptedException {
 		// Setup
-		Thread rewardServer = new Thread(new RewardServer("127.0.0.1", 2575, new RewardScheme()));
+		Thread rewardServer = new Thread(new RewardServer(2575, new RewardScheme()));
 		rewardServer.start();
 		RewardQuery query = new RewardQuery("127.0.0.1", 2575);
 		List<byte[]> sigmaList = new ArrayList<byte[]>();
@@ -137,7 +137,7 @@ public class RewardSchemeTest {
 	 */
 	@Test
 	public void packetCheck() throws IOException, InterruptedException {
-		Thread rewardServer = new Thread(new RewardServer("127.0.0.1", 1575, new RewardScheme()));
+		Thread rewardServer = new Thread(new RewardServer(1575, new RewardScheme()));
 		rewardServer.start();
 		new RewardClient("127.0.0.1", 1575, RewardPacket.newBuilder()
 				.setPid(101)
